@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>やさい販売チラシメーカー</title>
+<link href="https://fonts.googleapis.com/css2?family=Yomogi&family=Zen+Maru+Gothic:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#FBF3E3;--card:#FFFDF7;--green:#4F7942;--green-dk:#3A5A30;
+  --accent:#E8633C;--mustard:#F0A93B;--text:#4A3F35;--line:#E4D7C2;--gray:#D9CFC1;
+  --fp:'Yomogi',cursive;--fm:'Zen Maru Gothic',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--fm);min-height:100vh;padding-bottom:60px}
+header{background:var(--green);color:#fff;border-radius:0 0 24px 24px;padding:24px 18px 20px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.h-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.h-icon{font-size:1.4rem}
+.h-title{font-family:var(--fp);font-size:1.25rem;font-weight:900}
+.h-desc{font-size:.75rem;opacity:.9;line-height:1.6}
+main{max-width:480px;margin:0 auto;padding:14px 12px;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.sec-title{font-family:var(--fp);font-size:1rem;font-weight:900;color:var(--green-dk);margin-bottom:10px}
+.fl{display:flex;flex-direction:column;gap:8px}
+.fl2{display:flex;gap:8px}
+.fl2>*{flex:1}
+label.lbl{font-size:.7rem;font-weight:700;opacity:.65;display:block;margin-bottom:3px}
+input[type=text],input[type=url],input[type=date],textarea,select{
+  width:100%;border:2px solid var(--line);border-radius:11px;padding:7px 10px;
+  font-size:.88rem;font-family:var(--fm);color:var(--text);background:#fff;outline:none;transition:border-color .15s
+}
+input:focus,textarea:focus,select:focus{border-color:var(--green)}
+textarea{resize:vertical;min-height:60px}
+.upload-area{
+  border:2px dashed var(--line);border-radius:14px;padding:14px;text-align:center;
+  cursor:pointer;transition:border-color .15s;background:#fff
+}
+.upload-area:hover{border-color:var(--green)}
+.upload-area input{display:none}
+.upload-label{font-size:.78rem;opacity:.6;line-height:1.6}
+.upload-preview{max-width:100%;max-height:120px;border-radius:10px;margin-top:8px;display:none}
+.map-status{font-size:.7rem;margin-top:4px;padding:4px 8px;border-radius:8px;display:none}
+.map-status.ok{background:#E8F4E8;color:var(--green-dk)}
+.map-status.ng{background:#FEE;color:#c33}
+.btn-primary{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:6px;
+  background:var(--accent);color:#fff;font-family:var(--fm);font-size:.95rem;font-weight:700;
+  border:none;border-radius:13px;padding:11px;cursor:pointer;transition:opacity .15s;margin-top:4px
+}
+.btn-primary:disabled{background:var(--gray);cursor:default}
+.btn-primary:not(:disabled):hover{opacity:.85}
+.btn-sm{
+  display:inline-flex;align-items:center;gap:4px;padding:5px 12px;
+  border:none;border-radius:20px;font-size:.72rem;font-weight:700;cursor:pointer;transition:all .15s
+}
+.btn-copy{background:var(--accent);color:#fff}
+.btn-copy.done{background:var(--green)}
+.ticket-section{display:flex;flex-direction:column;gap:8px}
+.ticket-item{
+  display:flex;align-items:center;gap:8px;padding:8px 10px;
+  background:var(--bg);border:1.5px solid var(--line);border-radius:12px
+}
+.ticket-item input[type=text]{flex:1;border:none;background:transparent;padding:2px 0;border-bottom:1.5px solid var(--line);border-radius:0}
+.ticket-item input[type=text]:focus{border-bottom-color:var(--green);outline:none}
+.btn-del{background:none;border:none;cursor:pointer;font-size:1rem;opacity:.5;padding:2px;flex-shrink:0}
+.btn-del:hover{opacity:1}
+.btn-add-ticket{
+  display:flex;align-items:center;gap:5px;padding:7px 12px;background:#fff;
+  border:2px dashed var(--line);border-radius:12px;cursor:pointer;font-size:.8rem;
+  font-family:var(--fm);font-weight:700;color:var(--text);width:100%;justify-content:center;transition:border-color .15s
+}
+.btn-add-ticket:hover{border-color:var(--green)}
+.prompt-block{display:none;flex-direction:column;gap:10px}
+.prompt-wrap{position:relative}
+.prompt-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px}
+.prompt-title{font-family:var(--fp);font-size:.9rem;font-weight:900;color:var(--green-dk)}
+.prompt-desc{font-size:.7rem;opacity:.6;margin-bottom:5px;line-height:1.5}
+.prompt-ta{
+  width:100%;border:1.5px solid var(--line);border-radius:12px;padding:9px;
+  font-size:.7rem;font-family:var(--fm);line-height:1.7;background:var(--bg);
+  color:var(--text);resize:none;outline:none
+}
+.note{font-size:.7rem;opacity:.5;text-align:center;padding:0 8px;line-height:1.6}
+.veggie-tag{
+  display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 8px;
+  background:var(--bg);border:1.5px solid var(--line);border-radius:20px;font-size:.78rem;cursor:pointer;margin:2px
+}
+.veggie-tag.sel{background:var(--green);border-color:var(--green);color:#fff}
+.veggie-grid{display:flex;flex-wrap:wrap;gap:2px;margin-bottom:8px}
+.divider{height:1px;background:var(--line);margin:4px 0}
+</style>
+<link rel="apple-touch-icon" href="./icon.png">
+</head>
+<body>
+
+<header>
+  <div class="h-row">
+    <span class="h-icon">🥬</span>
+    <span class="h-title">やさい販売チラシメーカー</span>
+  </div>
+  <p class="h-desc">情報を入力してプロンプトを生成。画像生成AIに貼り付けて完成！</p>
+</header>
+
+<main>
+
+  <!-- ① ロゴ -->
+  <div class="card">
+    <div class="sec-title">① 屋号ロゴ</div>
+    <div class="upload-area" onclick="document.getElementById('logo-file').click()">
+      <input type="file" id="logo-file" accept="image/*" onchange="handleLogoUpload(event)">
+      <div class="upload-label">📷 タップしてロゴ画像をアップロード<br><span style="font-size:.65rem">（なくてもOK）</span></div>
+      <img id="logo-preview" class="upload-preview">
+    </div>
+  </div>
+
+  <!-- ② 販売情報 -->
+  <div class="card">
+    <div class="sec-title">② 販売情報</div>
+    <div class="fl">
+      <div>
+        <label class="lbl">販売日・曜日</label>
+        <input type="text" id="sale-date" placeholder="例：毎週土曜日・日曜日、7月20日（土）">
+      </div>
+      <div>
+        <label class="lbl">販売時間</label>
+        <input type="text" id="sale-time" placeholder="例：朝9時〜なくなり次第終了">
+      </div>
+      <div>
+        <label class="lbl">販売場所（名称）</label>
+        <input type="text" id="sale-place" placeholder="例：〇〇スーパー駐車場横">
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ 地図 -->
+  <div class="card">
+    <div class="sec-title">③ 販売場所の地図</div>
+    <div class="fl">
+      <div>
+        <label class="lbl">Google マップ URL を貼り付け</label>
+        <input type="url" id="map-url" placeholder="https://maps.google.com/..." oninput="parseMapUrl(this.value)">
+        <div class="map-status" id="map-status"></div>
+      </div>
+      <div id="map-info" style="display:none">
+        <label class="lbl">抽出した場所情報</label>
+        <input type="text" id="map-label" placeholder="場所名・住所">
+      </div>
+      <div>
+        <label class="lbl" style="margin-top:4px">または 地図スクリーンショット</label>
+        <div class="upload-area" onclick="document.getElementById('map-file').click()">
+          <input type="file" id="map-file" accept="image/*" onchange="handleMapUpload(event)">
+          <div class="upload-label" id="map-upload-label">📍 タップして地図画像をアップロード</div>
+          <img id="map-preview" class="upload-preview">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ 野菜の絵（選択） -->
+  <div class="card">
+    <div class="sec-title">④ チラシに描く野菜</div>
+    <p style="font-size:.72rem;opacity:.6;margin-bottom:8px">タップして選択（複数可）</p>
+    <div class="veggie-grid" id="veggie-grid"></div>
+    <div class="fl2" style="margin-top:6px">
+      <div>
+        <label class="lbl">追加で入力</label>
+        <input type="text" id="veggie-custom" placeholder="例：さつまいも" onkeydown="if(event.key==='Enter')addCustomVeggie()">
+      </div>
+      <button class="btn-primary" style="margin-top:0;padding:7px" onclick="addCustomVeggie()">追加</button>
+    </div>
+  </div>
+
+  <!-- ⑤ キャッチコピー・メッセージ -->
+  <div class="card">
+    <div class="sec-title">⑤ キャッチコピー・メッセージ</div>
+    <div class="fl">
+      <div>
+        <label class="lbl">メインキャッチ（大きく入る一言）</label>
+        <input type="text" id="catch-main" placeholder="例：朝採れ新鮮野菜、直売します！">
+      </div>
+      <div>
+        <label class="lbl">サブメッセージ（小さく添える一言）</label>
+        <input type="text" id="catch-sub" placeholder="例：育てる人の想いをのせて。">
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑥ 交換チケット -->
+  <div class="card">
+    <div class="sec-title">⑥ 切り取り交換チケット</div>
+    <p style="font-size:.72rem;opacity:.6;margin-bottom:10px">チラシ下部に切り取り線付きで入ります</p>
+    <div class="ticket-section" id="ticket-list"></div>
+    <button class="btn-add-ticket" onclick="addTicket()">
+      ＋ チケット内容を追加
+    </button>
+    <div class="divider" style="margin-top:10px"></div>
+    <div style="margin-top:8px">
+      <label class="lbl">チケット有効期限（任意）</label>
+      <input type="text" id="ticket-expire" placeholder="例：2025年8月末まで有効">
+    </div>
+  </div>
+
+  <!-- 生成ボタン -->
+  <button class="btn-primary" id="btn-generate" onclick="generatePrompts()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    プロンプトを生成する
+  </button>
+
+  <!-- 出力 -->
+  <div class="prompt-block" id="prompt-block">
+
+    <div class="card">
+      <div class="prompt-header">
+        <div class="prompt-title">📄 チラシ全体 プロンプト</div>
+        <button class="btn-sm btn-copy" id="copy-flyer" onclick="copyText('prompt-flyer','copy-flyer')">コピー</button>
+      </div>
+      <div class="prompt-desc">このプロンプト＋ロゴ画像＋地図画像を画像生成AIに添付して送ってください。</div>
+      <textarea class="prompt-ta" id="prompt-flyer" rows="14" readonly></textarea>
+    </div>
+
+    <div class="card">
+      <div class="prompt-header">
+        <div class="prompt-title">🎨 野菜イラスト プロンプト</div>
+        <button class="btn-sm btn-copy" id="copy-veggie" onclick="copyText('prompt-veggie','copy-veggie')">コピー</button>
+      </div>
+      <div class="prompt-desc">野菜のイラスト素材を個別に作りたい場合に使えます（任意）。</div>
+      <textarea class="prompt-ta" id="prompt-veggie" rows="8" readonly></textarea>
+    </div>
+
+    <p class="note">画像生成AI（ChatGPT・Geminiなど）にプロンプトを貼り付けて使ってください。<br>チラシプロンプトにはロゴ・地図画像を一緒に添付するとより精度が上がります。</p>
+  </div>
+
+</main>
+
+<script>
+// ── データ ──
+const STORAGE_KEY = 'veggie-flyer-v1';
+let logoDataUrl = null;
+let mapDataUrl = null;
+let mapLocationText = '';
+let selectedVeggies = new Set();
+let tickets = [];
+
+const PRESET_VEGGIES = [
+  'トマト','ミニトマト','きゅうり','なす','ピーマン',
+  'キャベツ','白菜','ほうれん草','じゃがいも','とうもろこし',
+  'にんじん','大根','ブロッコリー','かぼちゃ','玉ねぎ'
+];
+let customVeggies = [];
+
+// ── 保存・復元 ──
+const save = () => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      saleDate: v('sale-date'), saleTime: v('sale-time'),
+      salePlace: v('sale-place'), mapUrl: v('map-url'),
+      mapLabel: v('map-label'), catchMain: v('catch-main'),
+      catchSub: v('catch-sub'), ticketExpire: v('ticket-expire'),
+      selectedVeggies: [...selectedVeggies], customVeggies, tickets,
+      mapLocationText
+    }));
+  } catch(e) {}
+};
+const load = () => {
+  try {
+    const r = localStorage.getItem(STORAGE_KEY);
+    if (!r) return;
+    const d = JSON.parse(r);
+    ['sale-date','sale-time','sale-place','map-url','map-label','catch-main','catch-sub','ticket-expire'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && d[id.replace(/-([a-z])/g, (_,c)=>c.toUpperCase())]) el.value = d[id.replace(/-([a-z])/g, (_,c)=>c.toUpperCase())] || '';
+    });
+    // manual field name mapping
+    if (d.saleDate) sv('sale-date', d.saleDate);
+    if (d.saleTime) sv('sale-time', d.saleTime);
+    if (d.salePlace) sv('sale-place', d.salePlace);
+    if (d.mapUrl) { sv('map-url', d.mapUrl); parseMapUrl(d.mapUrl, true); }
+    if (d.mapLabel) sv('map-label', d.mapLabel);
+    if (d.catchMain) sv('catch-main', d.catchMain);
+    if (d.catchSub) sv('catch-sub', d.catchSub);
+    if (d.ticketExpire) sv('ticket-expire', d.ticketExpire);
+    if (d.customVeggies) customVeggies = d.customVeggies;
+    if (d.selectedVeggies) selectedVeggies = new Set(d.selectedVeggies);
+    if (d.tickets) tickets = d.tickets;
+    if (d.mapLocationText) mapLocationText = d.mapLocationText;
+  } catch(e) {}
+};
+const v = id => (document.getElementById(id)||{}).value || '';
+const sv = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
+
+// ── ロゴアップロード ──
+const handleLogoUpload = (e) => {
+  const file = e.target.files[0]; if(!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    logoDataUrl = ev.target.result;
+    const img = document.getElementById('logo-preview');
+    img.src = logoDataUrl; img.style.display = 'block';
+    document.querySelector('#logo-file').closest('.upload-area').querySelector('.upload-label').textContent = '✓ ロゴ画像が設定されました';
+  };
+  r.readAsDataURL(file);
+};
+
+// ── 地図アップロード ──
+const handleMapUpload = (e) => {
+  const file = e.target.files[0]; if(!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    mapDataUrl = ev.target.result;
+    const img = document.getElementById('map-preview');
+    img.src = mapDataUrl; img.style.display = 'block';
+    document.getElementById('map-upload-label').textContent = '✓ 地図画像が設定されました';
+  };
+  r.readAsDataURL(file);
+};
+
+// ── Google マップ URL パース ──
+const parseMapUrl = (url, silent) => {
+  const st = document.getElementById('map-status');
+  const mi = document.getElementById('map-info');
+  if (!url || url.length < 10) { st.style.display='none'; mi.style.display='none'; mapLocationText=''; return; }
+
+  let found = '';
+  // place/ChIJ形式: maps.google.com/maps/place/場所名/@...
+  const placeMatch = url.match(/maps\/place\/([^/@?]+)/);
+  if (placeMatch) found = decodeURIComponent(placeMatch[1].replace(/\+/g,' '));
+  // q= パラメータ
+  if (!found) { const qm = url.match(/[?&]q=([^&]+)/); if(qm) found = decodeURIComponent(qm[1].replace(/\+/g,' ')); }
+  // !1s の後のエンコード名
+  if (!found) { const sm = url.match(/!1s([^!]+)/); if(sm) try{ found = decodeURIComponent(sm[1]); }catch(e){} }
+
+  if (found && found.length > 2) {
+    mapLocationText = found;
+    if (!silent) sv('map-label', found);
+    st.textContent = '✓ 場所を取得しました：' + found;
+    st.className = 'map-status ok'; st.style.display = 'block';
+    mi.style.display = 'block';
+  } else {
+    mapLocationText = '';
+    st.textContent = '場所名を自動取得できませんでした。下の「販売場所（名称）」に手入力してください。';
+    st.className = 'map-status ng'; st.style.display = 'block';
+    mi.style.display = 'none';
+  }
+  save();
+};
+
+// ── 野菜タグ ──
+const renderVeggieGrid = () => {
+  const grid = document.getElementById('veggie-grid');
+  const all = [...PRESET_VEGGIES, ...customVeggies];
+  grid.innerHTML = all.map(name => `
+    <span class="veggie-tag ${selectedVeggies.has(name)?'sel':''}" onclick="toggleVeggie('${name}')">
+      ${name}
+    </span>
+  `).join('');
+};
+const toggleVeggie = name => {
+  if (selectedVeggies.has(name)) selectedVeggies.delete(name);
+  else selectedVeggies.add(name);
+  renderVeggieGrid(); save();
+};
+const addCustomVeggie = () => {
+  const inp = document.getElementById('veggie-custom');
+  const name = inp.value.trim(); if(!name) return;
+  if (![...PRESET_VEGGIES,...customVeggies].includes(name)) {
+    customVeggies.push(name);
+    selectedVeggies.add(name);
+  }
+  inp.value = '';
+  renderVeggieGrid(); save();
+};
+
+// ── チケット ──
+const renderTickets = () => {
+  const list = document.getElementById('ticket-list');
+  if (!tickets.length) { list.innerHTML = ''; return; }
+  list.innerHTML = tickets.map((t, i) => `
+    <div class="ticket-item">
+      <span style="font-size:1rem;flex-shrink:0">🎫</span>
+      <input type="text" value="${esc(t)}" placeholder="例：おまけ野菜1品プレゼント"
+        onchange="tickets[${i}]=this.value;save()">
+      <button class="btn-del" onclick="tickets.splice(${i},1);renderTickets();save()">✕</button>
+    </div>
+  `).join('');
+};
+const addTicket = () => { tickets.push(''); renderTickets(); save(); };
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+// ── プロンプト生成 ──
+const generatePrompts = () => {
+  const saleDate  = v('sale-date');
+  const saleTime  = v('sale-time');
+  const salePlace = v('sale-place');
+  const mapLabel  = v('map-label') || mapLocationText;
+  const catchMain = v('catch-main');
+  const catchSub  = v('catch-sub');
+  const ticketExpire = v('ticket-expire');
+  const veggies = [...selectedVeggies];
+  const hasLogo = !!logoDataUrl;
+  const hasMap  = !!mapDataUrl || !!mapLabel;
+  const hasTickets = tickets.filter(t=>t.trim()).length > 0;
+
+  // ── チラシ本体プロンプト ──
+  const logoInst = hasLogo
+    ? 'この会話に添付したロゴ画像を、チラシ左上角（端から約10mmの内側）に、約60mm×60mmで配置してください。ロゴは確認なしでそのまま配置してください。'
+    : 'ロゴ画像はありません。左上にロゴ用の空白スペースは作らなくて構いません。';
+
+  const mapInst = mapDataUrl
+    ? 'この会話に添付した地図画像をチラシに組み込み、「販売場所の地図」というラベルを付けてください。'
+    : mapLabel
+      ? `販売場所の地図エリアとして、「${mapLabel}」周辺の簡略な手描き風の地図イラストを描いてください。`
+      : '地図は入れなくて構いません。';
+
+  const saleDateLine  = saleDate  ? `販売日・曜日：${saleDate}` : '';
+  const saleTimeLine  = saleTime  ? `販売時間：${saleTime}` : '';
+  const salePlaceLine = salePlace ? `販売場所：${salePlace}` : '';
+  const mapLabelLine  = mapLabel  ? `場所の補足：${mapLabel}` : '';
+  const catchMainLine = catchMain ? `メインキャッチ（大きく入れる）：「${catchMain}」` : '';
+  const catchSubLine  = catchSub  ? `サブメッセージ（小さく添える）：「${catchSub}」` : '';
+  const veggiesLine   = veggies.length ? `チラシに描く野菜：${veggies.join('、')}` : '';
+
+  const infoLines = [saleDateLine, saleTimeLine, salePlaceLine, mapLabelLine, catchMainLine, catchSubLine, veggiesLine]
+    .filter(Boolean).join('\n');
+
+  const ticketLines = hasTickets
+    ? tickets.filter(t=>t.trim()).map((t,i)=>`・${t.trim()}`).join('\n')
+    : '';
+  const ticketBlock = hasTickets ? `\n【チラシ下部：切り取り交換チケット】\nチラシ下部に、ミシン目（点線の切り取り線）で区切られた交換チケットエリアを設けてください。チケットには以下の内容を記載してください：\n${ticketLines}${ticketExpire ? '\n有効期限：'+ticketExpire : ''}\nチケットは縦横比3:1程度の横長カード形状で、ハサミマークを添えてください。` : '';
+
+  const textRule = `\n【文字ルール（厳守）】\n上記「掲載情報」に記載した文字（野菜名、販売日、場所、キャッチコピー、チケット内容）以外のテキストは、新たに作成して書き込まないでください。`;
+
+  const flyerPrompt =
+`A4サイズ・縦向きの野菜販売チラシを1枚作ってください。確認や質問は不要で、このプロンプトの指示をそのまま実行してください。
+
+【スタイル】
+背景はクラフト紙風または白地の温かみある紙の質感にしてください。黒板・黒背景は使わないでください。全体のタッチはクレヨンや色鉛筆で手描きしたような柔らかいスタイルで、緑・茶・オレンジ系のやさしい色使いにしてください。葉っぱ・野菜・土などの手描き素材を余白にあしらってください。
+
+【ロゴ配置】
+${logoInst}
+
+【地図】
+${mapInst}
+
+【掲載情報】
+${infoLines || '（情報が入力されていません）'}
+
+${ticketBlock}
+${textRule}
+
+【野菜のイラスト】
+${veggies.length ? `チラシ内に以下の野菜の手描きイラストを配置してください：${veggies.join('、')}` : '野菜のイラストは入れなくて構いません。'}
+
+【レイアウト】
+上部にロゴ・キャッチコピー、中央エリアに販売日時・場所・地図・野菜イラスト、下部に切り取りチケット（あれば）を配置してください。全体的に読みやすく、人が足を止めたくなるような温かみのあるデザインにしてください。`;
+
+  // ── 野菜イラストプロンプト ──
+  const veggiePrompt = veggies.length
+    ? `以下の野菜のイラスト素材を、白背景・透過PNGで個別に作ってください。スタイルはクレヨンや色鉛筆で手描きしたような柔らかいタッチにしてください。各野菜はシンプルで可愛く、チラシに貼り付けやすいようにしてください。
+
+野菜リスト：
+${veggies.map(n=>`・${n}`).join('\n')}
+
+1品ずつ、正面向きまたは少し斜めのアングルで描いてください。背景は完全に白または透明にしてください。`
+    : '（野菜が選択されていません）';
+
+  document.getElementById('prompt-flyer').value = flyerPrompt;
+  document.getElementById('prompt-veggie').value = veggiePrompt;
+
+  const pb = document.getElementById('prompt-block');
+  pb.style.display = 'flex';
+  pb.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+// ── コピー ──
+const copyText = (taId, btnId) => {
+  const ta = document.getElementById(taId);
+  const btn = document.getElementById(btnId);
+  if (!ta.value) return;
+  const done = () => {
+    btn.classList.add('done'); btn.textContent = '✓ コピー済み';
+    setTimeout(() => { btn.classList.remove('done'); btn.textContent = 'コピー'; }, 1800);
+  };
+  if (navigator.clipboard) navigator.clipboard.writeText(ta.value).then(done).catch(()=>{ta.select();document.execCommand('copy');done();});
+  else { ta.select(); document.execCommand('copy'); done(); }
+};
+
+// ── 入力変更時の自動保存 ──
+document.querySelectorAll('input[type=text],input[type=url],input[type=date],textarea').forEach(el => {
+  el.addEventListener('input', save);
+});
+
+// ── 初期化 ──
+load();
+renderVeggieGrid();
+renderTickets();
+</script>
+
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(regs=>{
+    regs.forEach(r=>r.unregister());
+  }).then(()=>{
+    navigator.serviceWorker.register('./sw.js');
+  });
+}
+</script>
+</body>
+</html>
