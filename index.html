@@ -325,15 +325,26 @@ textarea{resize:vertical;min-height:54px}
     <textarea class="prompt-ta" id="prompt-map" rows="4" readonly></textarea>
   </div>
 
-  <!-- STEP3 ロゴ・QR -->
+  <!-- STEP3 ロゴ -->
   <div class="card" id="step3-card" style="display:none">
-    <span class="prompt-step">STEP 3 — ロゴ・QR画像を添付して送る</span>
+    <span class="prompt-step">STEP 3 — ロゴ画像を添付して送る</span>
     <div class="prompt-header">
-      <div class="prompt-title">&#127981; ロゴ・QRの配置指示</div>
+      <div class="prompt-title">&#127981; ロゴの配置指示</div>
       <button class="btn-sm btn-copy" id="copy-logo" onclick="copyText('prompt-logo','copy-logo')">コピー</button>
     </div>
-    <div class="prompt-desc" id="step3-desc"></div>
-    <textarea class="prompt-ta" id="prompt-logo" rows="5" readonly></textarea>
+    <div class="prompt-desc">ロゴ画像だけを添付しながらこのプロンプトを送ってください。QRコードはまだ送りません。</div>
+    <textarea class="prompt-ta" id="prompt-logo" rows="4" readonly></textarea>
+  </div>
+
+  <!-- STEP4 QR -->
+  <div class="card" id="step4-card" style="display:none">
+    <span class="prompt-step">STEP 4 — QRコード画像を添付して送る</span>
+    <div class="prompt-header">
+      <div class="prompt-title">&#128248; QRコードの配置指示</div>
+      <button class="btn-sm btn-copy" id="copy-qr" onclick="copyText('prompt-qr','copy-qr')">コピー</button>
+    </div>
+    <div class="prompt-desc">QRコード画像だけを添付しながらこのプロンプトを送ってください。</div>
+    <textarea class="prompt-ta" id="prompt-qr" rows="5" readonly></textarea>
   </div>
 
   <!-- 野菜イラスト -->
@@ -643,21 +654,15 @@ ${veggies.length ? `チラシ内に以下の野菜の手描きイラストを配
     ? `【重要】チラシ全体を再生成したり描き直したりしないでください。先ほど作ったチラシ画像に、今添付した地図のスクリーンショット画像を「そのまま・加工なし」で右側中段の地図エリアに合成してください。地図の内容・色・文字は一切変えないでください。「販売場所の地図」という短いラベルを地図の上か下に小さく追加するだけにしてください。それ以外のチラシの要素（イラスト・文字・背景・レイアウト）は一切変更しないでください。`
     : '';
 
-  // ── STEP3：ロゴ・QR（画像添付あり） ──
-  let logoPrompt = '';
-  let step3Desc = '';
-  const attachedItems = [];
-  if (hasLogo) attachedItems.push('ロゴ画像');
-  if (hasQR)   attachedItems.push('QRコード画像');
+  // ── STEP3：ロゴのみ ──
+  const logoPrompt = hasLogo
+    ? `先ほど作ったチラシに、今添付したロゴ画像を組み込んでください。チラシ全体を再生成しないでください。\n\nロゴ画像をチラシ左上角（端から約10mm内側）に約55mm×55mmで配置してください。ロゴの文字・色・デザインは一切変えず、画像をそのまま貼り付けてください。\n\nロゴ以外のチラシの要素は一切変更しないでください。確認や質問は不要でそのまま実行してください。`
+    : '';
 
-  if (hasLogo || hasQR) {
-    const instructions = [];
-    if (hasLogo) instructions.push('【ロゴ】添付したロゴ画像を、チラシ左上角（端から約10mm内側）に約55mm×55mmで配置してください。ロゴの文字・色・デザインは一切変えず、画像をそのまま貼り付けてください。');
-    if (hasQR)   instructions.push(`【QRコード・最重要】添付したQRコード画像を、チラシ右下のQRエリアにそのまま合成してください。\n絶対に守ること：QRコードを再描画・模写・イラスト化しないでください。QRコードのピクセルが1つでも変わると読み取り不能になります。添付した画像ファイルをそのままコピー&ペーストする形で配置してください。サイズ変更は等倍縮小のみ許可します。${qrText ? '\nQRコードの下に「'+qrText+'」と小さく記載してください。' : ''}`);
-
-    logoPrompt = `先ほど作ったチラシに、今添付した${attachedItems.join('と')}を組み込んでください。チラシ全体を再生成しないでください。\n\n${instructions.join('\n\n')}\n\nQRコード・ロゴ以外のチラシの要素は一切変更しないでください。確認や質問は不要でそのまま実行してください。`;
-    step3Desc = `${attachedItems.join('と')}を添付しながらこのプロンプトを送ってください。`;
-  }
+  // ── STEP4：QRコードのみ ──
+  const qrPrompt = hasQR
+    ? `先ほど作ったチラシに、今添付したQRコード画像を組み込んでください。チラシ全体を再生成しないでください。\n\n【QRコード・最重要】添付したQRコード画像を、チラシ右下のQRエリアにそのまま合成してください。\n絶対に守ること：QRコードを再描画・模写・イラスト化しないでください。QRコードのピクセルが1つでも変わると読み取り不能になります。添付した画像ファイルをそのままコピー＆ペーストする形で配置してください。サイズ変更は等倍縮小のみ許可します。${qrText ? '\nQRコードの下に「'+qrText+'」と小さく記載してください。' : ''}\n\nQRコード以外のチラシの要素は一切変更しないでください。確認や質問は不要でそのまま実行してください。`
+    : '';
 
   // ── 野菜イラスト ──
   const veggiePrompt = veggies.length
@@ -668,11 +673,12 @@ ${veggies.length ? `チラシ内に以下の野菜の手描きイラストを配
   sv('prompt-flyer', flyerPrompt);
   sv('prompt-map', mapPrompt);
   sv('prompt-logo', logoPrompt);
+  sv('prompt-qr', qrPrompt);
   sv('prompt-veggie', veggiePrompt);
 
   document.getElementById('step2-card').style.display = (mapMode==='upload' && hasMap) ? 'block' : 'none';
-  document.getElementById('step3-card').style.display = (hasLogo || hasQR) ? 'block' : 'none';
-  document.getElementById('step3-desc').textContent = step3Desc;
+  document.getElementById('step3-card').style.display = hasLogo ? 'block' : 'none';
+  document.getElementById('step4-card').style.display = hasQR   ? 'block' : 'none';
 
   const pb = document.getElementById('prompt-block');
   pb.style.display = 'flex';
