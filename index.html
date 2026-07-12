@@ -114,6 +114,9 @@ textarea{resize:vertical;min-height:54px}
 .import-status{font-size:.72rem;margin-top:5px;padding:4px 10px;border-radius:8px;display:none}
 .import-status.ok{background:#E8F4E8;color:var(--green-dk)}
 .import-status.ng{background:#FEE;color:#c33}
+.sale-entry{background:var(--bg);border:1.5px solid var(--line);border-radius:13px;padding:10px 10px 8px}
+.sale-entry-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.sale-entry-num{font-family:var(--fp);font-size:.8rem;font-weight:900;color:var(--green-dk)}
 </style>
 <link rel="apple-touch-icon" href="./icon.png">
 </head>
@@ -142,20 +145,11 @@ textarea{resize:vertical;min-height:54px}
 <!-- ② 販売情報 -->
 <div class="card">
   <div class="sec-title">&#9313; 販売情報</div>
-  <div class="fl">
-    <div>
-      <label class="lbl">販売日・曜日</label>
-      <input type="text" id="sale-date" placeholder="例：毎週土曜日・日曜日、7月20日（土）">
-    </div>
-    <div>
-      <label class="lbl">販売時間</label>
-      <input type="text" id="sale-time" placeholder="例：朝9時〜なくなり次第終了">
-    </div>
-    <div>
-      <label class="lbl">販売場所（名称）</label>
-      <input type="text" id="sale-place" placeholder="例：〇〇スーパー駐車場横">
-    </div>
-  </div>
+  <p style="font-size:.72rem;opacity:.6;margin-bottom:10px">複数の販売場所・日程を追加できます</p>
+  <div id="sale-entries-list" style="display:flex;flex-direction:column;gap:10px"></div>
+  <button class="btn-add-ticket" onclick="addSaleEntry()" style="margin-top:8px">
+    ＋ 販売場所・日程を追加
+  </button>
 </div>
 
 <!-- ③ 地図 -->
@@ -336,7 +330,8 @@ let mapLocationText = '';
 let selectedVeggies = new Set();
 let tickets = [];
 let customVeggies = [];
-let ticketStyle = 'bottom'; // 'bottom' | 'side'
+let ticketStyle = 'bottom';
+let saleEntries = [{ date:'', time:'', place:'' }]; // 販売情報（複数対応）
 
 const PRESETS = [
   'トマト','ミニトマト','きゅうり','なす','ピーマン',
@@ -348,7 +343,7 @@ const PRESETS = [
 const save = () => {
   try {
     localStorage.setItem(SK, JSON.stringify({
-      saleDate:v('sale-date'), saleTime:v('sale-time'), salePlace:v('sale-place'),
+      saleEntries,
       mapUrl:v('map-url'), mapLabel:v('map-label'), catchMain:v('catch-main'),
       catchSub:v('catch-sub'), ticketExpire:v('ticket-expire'), qrText:v('qr-text'),
       selectedVeggies:[...selectedVeggies], customVeggies, tickets,
@@ -361,22 +356,68 @@ const load = () => {
     const d = JSON.parse(localStorage.getItem(SK) || 'null');
     if (!d) return;
     const fields = {
-      'sale-date':'saleDate','sale-time':'saleTime','sale-place':'salePlace',
       'map-url':'mapUrl','map-label':'mapLabel','catch-main':'catchMain',
       'catch-sub':'catchSub','ticket-expire':'ticketExpire','qr-text':'qrText'
     };
     Object.entries(fields).forEach(([id,key]) => { if(d[key]) sv(id, d[key]); });
     if (d.mapUrl) { parseMapUrl(d.mapUrl, true); }
-    if (d.customVeggies) customVeggies = d.customVeggies;
+    if (d.customVeggies)   customVeggies = d.customVeggies;
     if (d.selectedVeggies) selectedVeggies = new Set(d.selectedVeggies);
-    if (d.tickets) tickets = d.tickets;
+    if (d.tickets)         tickets = d.tickets;
     if (d.mapLocationText) mapLocationText = d.mapLocationText;
-    if (d.ticketStyle) { ticketStyle = d.ticketStyle; setTicketStyle(ticketStyle, true); }
+    if (d.ticketStyle)     { ticketStyle = d.ticketStyle; setTicketStyle(ticketStyle, true); }
+    // 旧データ互換（saleDate/saleTime/salePlaceの単体フィールド）
+    if (d.saleEntries) {
+      saleEntries = d.saleEntries;
+    } else if (d.saleDate || d.saleTime || d.salePlace) {
+      saleEntries = [{ date: d.saleDate||'', time: d.saleTime||'', place: d.salePlace||'' }];
+    }
   } catch(e) {}
 };
 const v = id => (document.getElementById(id)||{}).value || '';
 const sv = (id,val) => { const el=document.getElementById(id); if(el) el.value=val; };
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+// ── 販売情報（複数） ──
+const renderSaleEntries = () => {
+  const list = document.getElementById('sale-entries-list');
+  list.innerHTML = saleEntries.map((e, i) => `
+    <div class="sale-entry">
+      <div class="sale-entry-header">
+        <span class="sale-entry-num">&#128205; 販売場所 ${saleEntries.length > 1 ? i+1 : ''}</span>
+        ${saleEntries.length > 1
+          ? `<button class="btn-del" onclick="removeSaleEntry(${i})" title="削除">✕</button>`
+          : ''}
+      </div>
+      <div class="fl">
+        <div>
+          <label class="lbl">販売日・曜日</label>
+          <input type="text" value="${esc(e.date)}" placeholder="例：毎週土曜日、7月20日（土）"
+            oninput="saleEntries[${i}].date=this.value;save()">
+        </div>
+        <div>
+          <label class="lbl">販売時間</label>
+          <input type="text" value="${esc(e.time)}" placeholder="例：朝9時〜なくなり次第終了"
+            oninput="saleEntries[${i}].time=this.value;save()">
+        </div>
+        <div>
+          <label class="lbl">販売場所（名称）</label>
+          <input type="text" value="${esc(e.place)}" placeholder="例：〇〇スーパー駐車場横"
+            oninput="saleEntries[${i}].place=this.value;save()">
+        </div>
+      </div>
+    </div>
+  `).join('');
+};
+const addSaleEntry = () => {
+  saleEntries.push({ date:'', time:'', place:'' });
+  renderSaleEntries(); save();
+};
+const removeSaleEntry = (i) => {
+  saleEntries.splice(i, 1);
+  if (saleEntries.length === 0) saleEntries = [{ date:'', time:'', place:'' }];
+  renderSaleEntries(); save();
+};
 
 // ── アップロード ──
 const handleUpload = (e, type) => {
@@ -456,9 +497,6 @@ const addTicket = () => { tickets.push(''); renderTickets(); save(); };
 
 // ── プロンプト生成 ──
 const generatePrompts = () => {
-  const saleDate   = v('sale-date');
-  const saleTime   = v('sale-time');
-  const salePlace  = v('sale-place');
   const mapLabel   = v('map-label') || mapLocationText;
   const catchMain  = v('catch-main');
   const catchSub   = v('catch-sub');
@@ -470,6 +508,24 @@ const generatePrompts = () => {
   const hasQR      = !!uploads.qr;
   const hasTickets = tickets.filter(t=>t.trim()).length > 0;
   const ticketList = tickets.filter(t=>t.trim());
+
+  // 販売情報（複数エントリをまとめてテキスト化）
+  const validEntries = saleEntries.filter(e => e.date || e.time || e.place);
+  const isMultiple = validEntries.length > 1;
+
+  const saleLines = validEntries.map((e, i) => {
+    const label = isMultiple ? `【販売場所${i+1}】\n` : '';
+    const parts = [
+      e.date  ? `販売日・曜日：${e.date}` : '',
+      e.time  ? `販売時間：${e.time}` : '',
+      e.place ? `販売場所：${e.place}` : ''
+    ].filter(Boolean).join('\n');
+    return label + parts;
+  }).join('\n\n');
+
+  const multipleNote = isMultiple
+    ? `\n【複数の販売場所について】\n販売場所が${validEntries.length}か所あります。曜日や日程によって場所が異なります。それぞれの販売場所・日程が一目でわかるよう、表・カード・アイコン付きリストなど、チラシのデザインに合った見やすいレイアウトでうまくまとめてください。どのレイアウトにするかはAIにおまかせします。`
+    : '';
 
   // 地図指示（STEP1本体に入れる：画像なし版）
   const mapInst = hasMap
@@ -498,13 +554,11 @@ const generatePrompts = () => {
   }
 
   const infoLines = [
-    saleDate  ? `販売日・曜日：${saleDate}` : '',
-    saleTime  ? `販売時間：${saleTime}` : '',
-    salePlace ? `販売場所：${salePlace}` : '',
+    saleLines,
     catchMain ? `メインキャッチ（大きく）：「${catchMain}」` : '',
     catchSub  ? `サブメッセージ（小さく）：「${catchSub}」` : '',
     veggies.length ? `チラシに描く野菜：${veggies.join('、')}` : ''
-  ].filter(Boolean).join('\n');
+  ].filter(Boolean).join('\n\n');
 
   // ── STEP1：チラシ本体（画像添付なし） ──
   const flyerPrompt =
@@ -515,6 +569,7 @@ const generatePrompts = () => {
 
 【掲載情報】
 ${infoLines || '（情報未入力）'}
+${multipleNote}
 ${mapInst ? '\n【地図エリア】\n'+mapInst : ''}
 ${qrInst  ? '\n【QRコードエリア】\n'+qrInst : ''}
 ${ticketBlock}
@@ -587,11 +642,9 @@ document.querySelectorAll('input[type=text],input[type=url],textarea').forEach(e
 const exportData = () => {
   const withImages = document.getElementById('export-with-images').checked;
   const data = {
-    _version: 2,
+    _version: 3,
     _exportedAt: new Date().toISOString(),
-    saleDate:    v('sale-date'),
-    saleTime:    v('sale-time'),
-    salePlace:   v('sale-place'),
+    saleEntries,
     mapUrl:      v('map-url'),
     mapLabel:    v('map-label'),
     catchMain:   v('catch-main'),
@@ -635,11 +688,20 @@ const importData = (e) => {
 
       // テキストフィールド復元
       const fields = {
-        'sale-date':'saleDate','sale-time':'saleTime','sale-place':'salePlace',
         'map-url':'mapUrl','map-label':'mapLabel','catch-main':'catchMain',
         'catch-sub':'catchSub','ticket-expire':'ticketExpire','qr-text':'qrText'
       };
       Object.entries(fields).forEach(([id,key]) => { sv(id, d[key] || ''); });
+
+      // 販売情報復元（v2旧データ互換）
+      if (d.saleEntries) {
+        saleEntries = d.saleEntries;
+      } else if (d.saleDate || d.saleTime || d.salePlace) {
+        saleEntries = [{ date:d.saleDate||'', time:d.saleTime||'', place:d.salePlace||'' }];
+      } else {
+        saleEntries = [{ date:'', time:'', place:'' }];
+      }
+      renderSaleEntries();
 
       // 野菜・チケット・設定
       if (d.customVeggies)    customVeggies = d.customVeggies;
@@ -684,6 +746,7 @@ const importData = (e) => {
 };
 
 load();
+renderSaleEntries();
 renderVeggieGrid();
 renderTickets();
 </script>
