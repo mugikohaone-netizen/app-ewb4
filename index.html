@@ -562,9 +562,30 @@ const generatePrompts = () => {
     return label + parts;
   }).join('\n\n');
 
+  // 曜日バッジ指示を自動生成
+  const BADGE_COLORS = [
+    { key:'月', color:'青緑', hex:'#4A9E8E' },
+    { key:'火', color:'赤', hex:'#E05C3A' },
+    { key:'水', color:'青', hex:'#4A7FBE' },
+    { key:'木', color:'緑', hex:'#5A9E4A' },
+    { key:'金', color:'オレンジ', hex:'#E08A2A' },
+    { key:'土', color:'茶色', hex:'#8E6A3A' },
+    { key:'日', color:'赤紫', hex:'#C0392B' },
+  ];
+  const badgeInst = validEntries.length > 0 ? (() => {
+    const badges = validEntries.map((e, i) => {
+      const dateText = e.date || '';
+      const matched = BADGE_COLORS.find(b => dateText.includes(b.key));
+      const colorName = matched ? matched.color : ['緑','オレンジ','茶色','青'][i % 4];
+      const dayChar = matched ? matched.key : (i + 1) + '';
+      return `販売場所${i+1}：${colorName}の手描き風の丸いバッジに「${dateText || '販売場所'+(i+1)}」を白抜き文字で表示`;
+    }).join('\n');
+    return `\n【販売場所の曜日バッジ（固定デザイン）】\n販売情報の各エントリの左側に、以下の色の丸いバッジを手描き風に配置してください。バッジは草や葉のあしらい付きのレトロなスタンプ風にしてください。\n${badges}`;
+  })() : '';
+
   const multipleNote = isMultiple
-    ? `\n【複数の販売場所について】\n販売場所が${validEntries.length}か所あります。曜日や日程によって場所が異なります。それぞれの販売場所・日程が一目でわかるよう、表・カード・アイコン付きリストなど、チラシのデザインに合った見やすいレイアウトでうまくまとめてください。どのレイアウトにするかはAIにおまかせします。`
-    : '';
+    ? `\n【複数の販売場所について】\n販売場所が${validEntries.length}か所あります。それぞれの販売情報を左側の曜日バッジ＋右側に時間・場所を記載したカード形式で縦に並べてください。${badgeInst}`
+    : badgeInst;
 
   const blankSize = v('map-blank-size') || 'medium';
   const blankSizeText = { small:'約50mm×50mm', medium:'約70mm×70mm', large:'約90mm×70mm' }[blankSize] || '約70mm×70mm';
