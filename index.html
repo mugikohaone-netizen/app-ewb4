@@ -135,11 +135,11 @@ textarea{resize:vertical;min-height:54px}
 <!-- ① ロゴ -->
 <div class="card">
   <div class="sec-title">&#9312; 屋号ロゴ</div>
-  <div class="upload-area" onclick="document.getElementById('logo-file').click()">
-    <input type="file" id="logo-file" accept="image/*" onchange="handleUpload(event,'logo')">
-    <div class="upload-label" id="logo-label">&#128247; タップしてロゴ画像をアップロード<br><span style="font-size:.65rem">（なくてもOK）</span></div>
-    <img id="logo-preview" class="upload-preview">
-  </div>
+  <label class="ie-img-toggle" style="margin-bottom:4px">
+    <input type="checkbox" id="use-logo" onchange="save()">
+    ロゴをチラシに入れる
+  </label>
+  <p style="font-size:.68rem;opacity:.55;line-height:1.5">チェックを入れると「STEP 3」にロゴをAIのチャットへ直接貼る指示が出ます。</p>
 </div>
 
 <!-- ② 販売情報 -->
@@ -181,14 +181,12 @@ textarea{resize:vertical;min-height:54px}
       <input type="text" id="map-label" placeholder="場所名・住所">
     </div>
 
-    <!-- upload モードのみ：画像アップロード -->
+    <!-- upload モードのみ：チェックのみ表示（実際の画像はSTEP2でAIチャットに直接貼る） -->
     <div id="map-upload-block" style="display:none">
-      <label class="lbl">地図スクリーンショット</label>
-      <div class="upload-area" onclick="document.getElementById('map-file').click()">
-        <input type="file" id="map-file" accept="image/*" onchange="handleUpload(event,'map')">
-        <div class="upload-label" id="map-label-txt">&#128205; タップして地図画像をアップロード</div>
-        <img id="map-preview" class="upload-preview">
-      </div>
+      <label class="ie-img-toggle">
+        <input type="checkbox" id="map-has-image" onchange="save()">
+        地図のスクリーンショットを用意してある（STEP2でAIチャットに直接貼ります）
+      </label>
     </div>
 
     <!-- blank モードのみ：サイズ選択 -->
@@ -207,11 +205,11 @@ textarea{resize:vertical;min-height:54px}
 <!-- ④ QRコード -->
 <div class="card">
   <div class="sec-title">&#9315; QRコード <span style="font-size:.7rem;opacity:.55;font-family:var(--fm);font-weight:400">（任意）</span></div>
-  <div class="upload-area" onclick="document.getElementById('qr-file').click()">
-    <input type="file" id="qr-file" accept="image/*" onchange="handleUpload(event,'qr')">
-    <div class="upload-label" id="qr-label">&#128248; タップしてQRコード画像をアップロード</div>
-    <img id="qr-preview" class="upload-preview">
-  </div>
+  <label class="ie-img-toggle" style="margin-bottom:4px">
+    <input type="checkbox" id="use-qr" onchange="save()">
+    QRコードをチラシに入れる
+  </label>
+  <p style="font-size:.68rem;opacity:.55;line-height:1.5">チェックを入れると「STEP 4」にQR画像をAIのチャットへ直接貼る指示が出ます。</p>
   <div style="margin-top:8px">
     <label class="lbl">QRコードの説明テキスト（任意）</label>
     <input type="text" id="qr-text" placeholder="例：インスタはこちら、LINE登録はこちら">
@@ -278,10 +276,6 @@ textarea{resize:vertical;min-height:54px}
 <!-- インポート/エクスポート -->
 <div class="card">
   <div class="sec-title">&#128190; データの保存・読み込み</div>
-  <label class="ie-img-toggle">
-    <input type="checkbox" id="export-with-images" checked>
-    ロゴ・地図・QR画像も含める（ファイルが大きくなります）
-  </label>
   <div class="ie-row">
     <button class="btn-ie btn-export" onclick="exportData()">
       &#8595; エクスポート（保存）
@@ -364,9 +358,8 @@ textarea{resize:vertical;min-height:54px}
 
 <script>
 const SK = 'veggie-flyer-v2';
-let uploads = { logo: null, map: null, qr: null };
 let mapLocationText = '';
-let mapMode = 'illust'; // 'illust' | 'blank' | 'upload'
+let mapMode = 'illust';
 let selectedVeggies = new Set();
 let tickets = [];
 let customVeggies = [];
@@ -387,7 +380,8 @@ const save = () => {
       mapUrl:v('map-url'), mapLabel:v('map-label'), catchMain:v('catch-main'),
       catchSub:v('catch-sub'), ticketExpire:v('ticket-expire'), qrText:v('qr-text'),
       selectedVeggies:[...selectedVeggies], customVeggies, tickets,
-      mapLocationText, ticketStyle, mapMode, mapBlankSize:v('map-blank-size')
+      mapLocationText, ticketStyle, mapMode, mapBlankSize:v('map-blank-size'),
+      useLogo: cb('use-logo'), useQR: cb('use-qr'), mapHasImage: cb('map-has-image')
     }));
   } catch(e) {}
 };
@@ -408,6 +402,9 @@ const load = () => {
     if (d.ticketStyle)     { ticketStyle = d.ticketStyle; setTicketStyle(ticketStyle, true); }
     if (d.mapMode)         { mapMode = d.mapMode; setMapMode(mapMode, true); }
     if (d.mapBlankSize)    sv('map-blank-size', d.mapBlankSize);
+    if (d.useLogo)         setCb('use-logo', d.useLogo);
+    if (d.useQR)           setCb('use-qr', d.useQR);
+    if (d.mapHasImage)     setCb('map-has-image', d.mapHasImage);
     // 旧データ互換（saleDate/saleTime/salePlaceの単体フィールド）
     if (d.saleEntries) {
       saleEntries = d.saleEntries;
@@ -416,9 +413,11 @@ const load = () => {
     }
   } catch(e) {}
 };
-const v = id => (document.getElementById(id)||{}).value || '';
-const sv = (id,val) => { const el=document.getElementById(id); if(el) el.value=val; };
-const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const v     = id => (document.getElementById(id)||{}).value || '';
+const sv    = (id,val) => { const el=document.getElementById(id); if(el) el.value=val; };
+const cb    = id => !!(document.getElementById(id)||{}).checked;
+const setCb = (id,val) => { const el=document.getElementById(id); if(el) el.checked=!!val; };
+const esc   = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
 // ── 販売情報（複数） ──
 const renderSaleEntries = () => {
@@ -459,20 +458,6 @@ const removeSaleEntry = (i) => {
   saleEntries.splice(i, 1);
   if (saleEntries.length === 0) saleEntries = [{ date:'', time:'', place:'' }];
   renderSaleEntries(); save();
-};
-
-// ── アップロード ──
-const handleUpload = (e, type) => {
-  const file = e.target.files[0]; if(!file) return;
-  const r = new FileReader();
-  r.onload = ev => {
-    uploads[type] = ev.target.result;
-    const labels = { logo:'&#128247; ✓ ロゴ画像が設定されました', map:'&#128205; ✓ 地図画像が設定されました', qr:'&#128248; ✓ QRコード画像が設定されました' };
-    document.getElementById(type+'-label').innerHTML = labels[type];
-    const prev = document.getElementById(type+'-preview');
-    prev.src = ev.target.result; prev.style.display = 'block';
-  };
-  r.readAsDataURL(file);
 };
 
 // ── Google マップ URL パース ──
@@ -557,9 +542,9 @@ const generatePrompts = () => {
   const ticketExp  = v('ticket-expire');
   const qrText     = v('qr-text');
   const veggies    = [...selectedVeggies];
-  const hasLogo    = !!uploads.logo;
-  const hasMap     = !!uploads.map;
-  const hasQR      = !!uploads.qr;
+  const hasLogo    = cb('use-logo');
+  const hasMap     = mapMode === 'upload' && cb('map-has-image');
+  const hasQR      = cb('use-qr');
   const hasTickets = tickets.filter(t=>t.trim()).length > 0;
   const ticketList = tickets.filter(t=>t.trim());
 
@@ -702,9 +687,8 @@ document.querySelectorAll('input[type=text],input[type=url],textarea').forEach(e
 
 // ── エクスポート ──
 const exportData = () => {
-  const withImages = document.getElementById('export-with-images').checked;
   const data = {
-    _version: 3,
+    _version: 4,
     _exportedAt: new Date().toISOString(),
     saleEntries,
     mapUrl:      v('map-url'),
@@ -720,12 +704,10 @@ const exportData = () => {
     ticketStyle,
     mapMode,
     mapBlankSize: v('map-blank-size'),
+    useLogo:     cb('use-logo'),
+    useQR:       cb('use-qr'),
+    mapHasImage: cb('map-has-image'),
   };
-  if (withImages) {
-    if (uploads.logo) data.logoImage = uploads.logo;
-    if (uploads.map)  data.mapImage  = uploads.map;
-    if (uploads.qr)   data.qrImage   = uploads.qr;
-  }
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
@@ -775,23 +757,10 @@ const importData = (e) => {
       if (d.ticketStyle)      { ticketStyle = d.ticketStyle; setTicketStyle(ticketStyle, true); }
       if (d.mapMode)          { mapMode = d.mapMode; setMapMode(mapMode, true); }
       if (d.mapBlankSize)     sv('map-blank-size', d.mapBlankSize);
+      if (d.useLogo !== undefined)     setCb('use-logo', d.useLogo);
+      if (d.useQR !== undefined)       setCb('use-qr', d.useQR);
+      if (d.mapHasImage !== undefined) setCb('map-has-image', d.mapHasImage);
       if (d.mapUrl)           parseMapUrl(d.mapUrl, true);
-
-      // 画像復元
-      const imgMap = { logoImage:'logo', mapImage:'map', qrImage:'qr' };
-      const imgLabels = {
-        logo:'&#128247; ✓ ロゴ画像が復元されました',
-        map: '&#128205; ✓ 地図画像が復元されました',
-        qr:  '&#128248; ✓ QRコード画像が復元されました'
-      };
-      Object.entries(imgMap).forEach(([key, type]) => {
-        if (d[key]) {
-          uploads[type] = d[key];
-          document.getElementById(type+'-label').innerHTML = imgLabels[type];
-          const prev = document.getElementById(type+'-preview');
-          prev.src = d[key]; prev.style.display = 'block';
-        }
-      });
 
       renderVeggieGrid();
       renderTickets();
