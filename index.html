@@ -155,9 +155,24 @@ textarea{resize:vertical;min-height:54px}
 <!-- ③ 地図 -->
 <div class="card">
   <div class="sec-title">&#9314; 販売場所の地図</div>
+
+  <label class="lbl">地図の扱い方を選んでください</label>
+  <div class="ticket-style-row" style="flex-wrap:wrap;gap:6px;margin-bottom:10px">
+    <button class="style-btn active" id="map-mode-btn-illust" onclick="setMapMode('illust')">
+      &#127912; AI手描き風<br><span style="font-size:.63rem;opacity:.8">場所名からAIが描く</span>
+    </button>
+    <button class="style-btn" id="map-mode-btn-blank" onclick="setMapMode('blank')">
+      &#9633; 空白確保<br><span style="font-size:.63rem;opacity:.8">後で自分で貼り付け</span>
+    </button>
+    <button class="style-btn" id="map-mode-btn-upload" onclick="setMapMode('upload')" style="flex:1 0 100%;">
+      &#128444; 画像をSTEP2で送る<br><span style="font-size:.63rem;opacity:.8">地図スクショをAIに渡す（文字が崩れる場合あり）</span>
+    </button>
+  </div>
+
   <div class="fl">
-    <div>
-      <label class="lbl">Google マップ URL を貼り付け</label>
+    <!-- 共通：GoogleマップURL（illust・blankで場所名抽出に使用） -->
+    <div id="map-url-block">
+      <label class="lbl">Google マップ URL（任意・場所名の抽出に使用）</label>
       <input type="url" id="map-url" placeholder="https://maps.google.com/..." oninput="parseMapUrl(this.value)">
       <div class="map-status" id="map-status"></div>
     </div>
@@ -165,13 +180,26 @@ textarea{resize:vertical;min-height:54px}
       <label class="lbl">抽出した場所情報（修正可）</label>
       <input type="text" id="map-label" placeholder="場所名・住所">
     </div>
-    <div>
-      <label class="lbl" style="margin-top:4px">または 地図スクリーンショット</label>
+
+    <!-- upload モードのみ：画像アップロード -->
+    <div id="map-upload-block" style="display:none">
+      <label class="lbl">地図スクリーンショット</label>
       <div class="upload-area" onclick="document.getElementById('map-file').click()">
         <input type="file" id="map-file" accept="image/*" onchange="handleUpload(event,'map')">
         <div class="upload-label" id="map-label-txt">&#128205; タップして地図画像をアップロード</div>
         <img id="map-preview" class="upload-preview">
       </div>
+    </div>
+
+    <!-- blank モードのみ：サイズ選択 -->
+    <div id="map-blank-block" style="display:none">
+      <label class="lbl">空白エリアのサイズ</label>
+      <select id="map-blank-size" onchange="save()">
+        <option value="small">小（約50mm×50mm）</option>
+        <option value="medium" selected>中（約70mm×70mm）</option>
+        <option value="large">大（約90mm×70mm）</option>
+      </select>
+      <p style="font-size:.68rem;opacity:.55;margin-top:4px;line-height:1.5">出力されたチラシ画像をCanvaや写真アプリで開き、地図スクショを重ねて貼り付けてください。</p>
     </div>
   </div>
 </div>
@@ -327,6 +355,7 @@ textarea{resize:vertical;min-height:54px}
 const SK = 'veggie-flyer-v2';
 let uploads = { logo: null, map: null, qr: null };
 let mapLocationText = '';
+let mapMode = 'illust'; // 'illust' | 'blank' | 'upload'
 let selectedVeggies = new Set();
 let tickets = [];
 let customVeggies = [];
@@ -347,7 +376,7 @@ const save = () => {
       mapUrl:v('map-url'), mapLabel:v('map-label'), catchMain:v('catch-main'),
       catchSub:v('catch-sub'), ticketExpire:v('ticket-expire'), qrText:v('qr-text'),
       selectedVeggies:[...selectedVeggies], customVeggies, tickets,
-      mapLocationText, ticketStyle
+      mapLocationText, ticketStyle, mapMode, mapBlankSize:v('map-blank-size')
     }));
   } catch(e) {}
 };
@@ -366,6 +395,8 @@ const load = () => {
     if (d.tickets)         tickets = d.tickets;
     if (d.mapLocationText) mapLocationText = d.mapLocationText;
     if (d.ticketStyle)     { ticketStyle = d.ticketStyle; setTicketStyle(ticketStyle, true); }
+    if (d.mapMode)         { mapMode = d.mapMode; setMapMode(mapMode, true); }
+    if (d.mapBlankSize)    sv('map-blank-size', d.mapBlankSize);
     // 旧データ互換（saleDate/saleTime/salePlaceの単体フィールド）
     if (d.saleEntries) {
       saleEntries = d.saleEntries;
@@ -472,6 +503,18 @@ const addCustomVeggie = () => {
   inp.value=''; renderVeggieGrid(); save();
 };
 
+// ── 地図モード ──
+const setMapMode = (mode, silent) => {
+  mapMode = mode;
+  ['illust','blank','upload'].forEach(m => {
+    const el = document.getElementById('map-mode-btn-'+m);
+    if (el) el.classList.toggle('active', mode===m);
+  });
+  document.getElementById('map-upload-block').style.display = mode==='upload' ? 'block' : 'none';
+  document.getElementById('map-blank-block').style.display  = mode==='blank'  ? 'block' : 'none';
+  if (!silent) save();
+};
+
 // ── チケットスタイル ──
 const setTicketStyle = (style, silent) => {
   ticketStyle = style;
@@ -527,12 +570,24 @@ const generatePrompts = () => {
     ? `\n【複数の販売場所について】\n販売場所が${validEntries.length}か所あります。曜日や日程によって場所が異なります。それぞれの販売場所・日程が一目でわかるよう、表・カード・アイコン付きリストなど、チラシのデザインに合った見やすいレイアウトでうまくまとめてください。どのレイアウトにするかはAIにおまかせします。`
     : '';
 
-  // 地図指示（STEP1本体に入れる：画像なし版）
-  const mapInst = hasMap
-    ? '地図エリアを右側中段に確保してください（STEP2でスクリーンショットを添付します）。'
-    : mapLabel
-      ? `販売場所のエリアとして「${mapLabel}」周辺の簡略な手描き風地図イラストを描いてください。`
+  const blankSize = v('map-blank-size') || 'medium';
+  const blankSizeText = { small:'約50mm×50mm', medium:'約70mm×70mm', large:'約90mm×70mm' }[blankSize] || '約70mm×70mm';
+
+  // 地図指示（mapModeで分岐）
+  let mapInst = '';
+  if (mapMode === 'illust') {
+    mapInst = mapLabel
+      ? `販売場所のエリアとして「${mapLabel}」周辺の簡略な手描き風の地図イラストを描いてください。`
       : '';
+  } else if (mapMode === 'blank') {
+    mapInst = `地図を後で貼り付けるための白い空白エリア（${blankSizeText}）をチラシ右側中段に確保してください。そのエリアには何も描かないでください。薄いグレーの細い点線で枠を示してください。`;
+  } else if (mapMode === 'upload') {
+    mapInst = hasMap
+      ? '地図エリアを右側中段に確保してください（STEP2でスクリーンショットを添付します）。'
+      : mapLabel
+        ? `販売場所のエリアとして「${mapLabel}」周辺の簡略な手描き風の地図イラストを描いてください。`
+        : '';
+  }
 
   // QR指示（STEP1本体に入れる：画像なし版）
   const qrInst = hasQR
@@ -615,7 +670,7 @@ ${veggies.length ? `チラシ内に以下の野菜の手描きイラストを配
   sv('prompt-logo', logoPrompt);
   sv('prompt-veggie', veggiePrompt);
 
-  document.getElementById('step2-card').style.display = hasMap ? 'block' : 'none';
+  document.getElementById('step2-card').style.display = (mapMode==='upload' && hasMap) ? 'block' : 'none';
   document.getElementById('step3-card').style.display = (hasLogo || hasQR) ? 'block' : 'none';
   document.getElementById('step3-desc').textContent = step3Desc;
 
@@ -657,6 +712,8 @@ const exportData = () => {
     tickets,
     mapLocationText,
     ticketStyle,
+    mapMode,
+    mapBlankSize: v('map-blank-size'),
   };
   if (withImages) {
     if (uploads.logo) data.logoImage = uploads.logo;
@@ -710,6 +767,8 @@ const importData = (e) => {
       if (d.tickets)          tickets = d.tickets;
       if (d.mapLocationText)  mapLocationText = d.mapLocationText;
       if (d.ticketStyle)      { ticketStyle = d.ticketStyle; setTicketStyle(ticketStyle, true); }
+      if (d.mapMode)          { mapMode = d.mapMode; setMapMode(mapMode, true); }
+      if (d.mapBlankSize)     sv('map-blank-size', d.mapBlankSize);
       if (d.mapUrl)           parseMapUrl(d.mapUrl, true);
 
       // 画像復元
