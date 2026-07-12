@@ -98,6 +98,22 @@ textarea{resize:vertical;min-height:54px}
 .veggie-tag.sel{background:var(--green);border-color:var(--green);color:#fff}
 .veggie-grid{display:flex;flex-wrap:wrap;gap:2px;margin-bottom:7px}
 .divider{height:1px;background:var(--line);margin:6px 0}
+.ie-row{display:flex;gap:8px}
+.btn-ie{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
+  padding:10px 6px;border-radius:13px;font-family:var(--fm);font-size:.85rem;
+  font-weight:700;cursor:pointer;border:2px solid;transition:all .15s
+}
+.btn-export{background:var(--green);border-color:var(--green);color:#fff}
+.btn-export:hover{opacity:.85}
+.btn-import{background:#fff;border-color:var(--green);color:var(--green)}
+.btn-import:hover{background:var(--green);color:#fff}
+.ie-note{font-size:.68rem;opacity:.55;margin-top:5px;line-height:1.5}
+.ie-img-toggle{display:flex;align-items:center;gap:6px;font-size:.75rem;margin-bottom:8px;cursor:pointer}
+.ie-img-toggle input{accent-color:var(--green);width:15px;height:15px}
+.import-status{font-size:.72rem;margin-top:5px;padding:4px 10px;border-radius:8px;display:none}
+.import-status.ok{background:#E8F4E8;color:var(--green-dk)}
+.import-status.ng{background:#FEE;color:#c33}
 </style>
 <link rel="apple-touch-icon" href="./icon.png">
 </head>
@@ -214,12 +230,15 @@ textarea{resize:vertical;min-height:54px}
   <div class="sec-title">&#9318; 切り取り交換チケット</div>
 
   <label class="lbl">チケットスタイル</label>
-  <div class="ticket-style-row">
+  <div class="ticket-style-row" style="flex-wrap:wrap;gap:6px;">
     <button class="style-btn active" id="style-btn-bottom" onclick="setTicketStyle('bottom')">
-      ✂ 下部横帯<br><span style="font-size:.65rem;opacity:.8">チラシ下部に横長で</span>
+      ✂ 下部横帯<br><span style="font-size:.63rem;opacity:.8">チラシ下部に横長で</span>
     </button>
     <button class="style-btn" id="style-btn-side" onclick="setTicketStyle('side')">
-      ✂ 右端縦帯<br><span style="font-size:.65rem;opacity:.8">右端に縦向きで斜めカット</span>
+      ✂ 右端縦帯<br><span style="font-size:.63rem;opacity:.8">右端に縦向き斜めカット</span>
+    </button>
+    <button class="style-btn" id="style-btn-triangle" onclick="setTicketStyle('triangle')" style="flex:1 0 100%;">
+      ✂ 右下三角<br><span style="font-size:.63rem;opacity:.8">右下コーナーに正三角形のチケット</span>
     </button>
   </div>
 
@@ -232,6 +251,26 @@ textarea{resize:vertical;min-height:54px}
     <label class="lbl">チケット有効期限（任意）</label>
     <input type="text" id="ticket-expire" placeholder="例：2025年8月末まで有効">
   </div>
+</div>
+
+<!-- インポート/エクスポート -->
+<div class="card">
+  <div class="sec-title">&#128190; データの保存・読み込み</div>
+  <label class="ie-img-toggle">
+    <input type="checkbox" id="export-with-images" checked>
+    ロゴ・地図・QR画像も含める（ファイルが大きくなります）
+  </label>
+  <div class="ie-row">
+    <button class="btn-ie btn-export" onclick="exportData()">
+      &#8595; エクスポート（保存）
+    </button>
+    <button class="btn-ie btn-import" onclick="document.getElementById('import-file').click()">
+      &#8593; インポート（読み込み）
+    </button>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+  </div>
+  <div class="import-status" id="import-status"></div>
+  <p class="ie-note">エクスポート：入力したデータをJSONファイルとして保存します。<br>インポート：保存したJSONファイルを読み込んでデータを復元します。</p>
 </div>
 
 <!-- 生成ボタン -->
@@ -395,8 +434,10 @@ const addCustomVeggie = () => {
 // ── チケットスタイル ──
 const setTicketStyle = (style, silent) => {
   ticketStyle = style;
-  document.getElementById('style-btn-bottom').classList.toggle('active', style==='bottom');
-  document.getElementById('style-btn-side').classList.toggle('active', style==='side');
+  ['bottom','side','triangle'].forEach(s => {
+    const el = document.getElementById('style-btn-'+s);
+    if (el) el.classList.toggle('active', style===s);
+  });
   if (!silent) save();
 };
 
@@ -449,8 +490,10 @@ const generatePrompts = () => {
     const expLine = ticketExp ? `\n有効期限：${ticketExp}` : '';
     if (ticketStyle === 'bottom') {
       ticketBlock = `\n【切り取り交換チケット：下部横帯スタイル】\nチラシ下部にミシン目（点線切り取り線）＋ハサミマークで区切った横長の交換チケットエリアを設けてください。\nチケット内容：\n${lines}${expLine}`;
-    } else {
+    } else if (ticketStyle === 'side') {
       ticketBlock = `\n【切り取り交換チケット：右端縦帯スタイル】\nチラシ右端に縦長の帯として交換チケットを配置してください。帯の左側に斜め45度のミシン目（点線切り取り線）＋ハサミマークを入れ、帯の中のテキストは縦書きまたは90度回転した横書きにしてください。\nチケット内容：\n${lines}${expLine}`;
+    } else if (ticketStyle === 'triangle') {
+      ticketBlock = `\n【切り取り交換チケット：右下三角スタイル】\nチラシ右下コーナーに、正三角形の交換チケットを配置してください。三角形の斜め辺（左上から右下に向かう対角線）をミシン目（点線切り取り線）＋ハサミマークにしてください。三角形のサイズは辺の長さが約80〜100mm程度の正三角形にしてください。三角形の内側にチケット内容を放射状または斜めのテキストで記載してください。三角形の背景色は本体と少し異なる色にして目立たせてください。\nチケット内容：\n${lines}${expLine}`;
     }
   }
 
@@ -487,7 +530,7 @@ ${veggies.length ? `チラシ内に以下の野菜の手描きイラストを配
 
   // ── STEP2：地図画像（画像添付あり） ──
   const mapPrompt = hasMap
-    ? `先ほど作ったチラシに、今添付した地図のスクリーンショット画像をそのまま組み込んでください。チラシ右側中段の地図エリアに配置し、「販売場所の地図」というラベルを小さく添えてください。他の部分は変えないでください。`
+    ? `【重要】チラシ全体を再生成したり描き直したりしないでください。先ほど作ったチラシ画像に、今添付した地図のスクリーンショット画像を「そのまま・加工なし」で右側中段の地図エリアに合成してください。地図の内容・色・文字は一切変えないでください。「販売場所の地図」という短いラベルを地図の上か下に小さく追加するだけにしてください。それ以外のチラシの要素（イラスト・文字・背景・レイアウト）は一切変更しないでください。`
     : '';
 
   // ── STEP3：ロゴ・QR（画像添付あり） ──
@@ -539,6 +582,106 @@ const copyText = (taId, btnId) => {
 };
 
 document.querySelectorAll('input[type=text],input[type=url],textarea').forEach(el => el.addEventListener('input', save));
+
+// ── エクスポート ──
+const exportData = () => {
+  const withImages = document.getElementById('export-with-images').checked;
+  const data = {
+    _version: 2,
+    _exportedAt: new Date().toISOString(),
+    saleDate:    v('sale-date'),
+    saleTime:    v('sale-time'),
+    salePlace:   v('sale-place'),
+    mapUrl:      v('map-url'),
+    mapLabel:    v('map-label'),
+    catchMain:   v('catch-main'),
+    catchSub:    v('catch-sub'),
+    ticketExpire:v('ticket-expire'),
+    qrText:      v('qr-text'),
+    selectedVeggies: [...selectedVeggies],
+    customVeggies,
+    tickets,
+    mapLocationText,
+    ticketStyle,
+  };
+  if (withImages) {
+    if (uploads.logo) data.logoImage = uploads.logo;
+    if (uploads.map)  data.mapImage  = uploads.map;
+    if (uploads.qr)   data.qrImage   = uploads.qr;
+  }
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const now  = new Date();
+  const stamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `veggie-flyer-${stamp}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+// ── インポート ──
+const importData = (e) => {
+  const file = e.target.files[0];
+  e.target.value = ''; // 同ファイルの再選択を可能にする
+  if (!file) return;
+  const st = document.getElementById('import-status');
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const d = JSON.parse(ev.target.result);
+      if (!d || typeof d !== 'object') throw new Error('invalid');
+
+      // テキストフィールド復元
+      const fields = {
+        'sale-date':'saleDate','sale-time':'saleTime','sale-place':'salePlace',
+        'map-url':'mapUrl','map-label':'mapLabel','catch-main':'catchMain',
+        'catch-sub':'catchSub','ticket-expire':'ticketExpire','qr-text':'qrText'
+      };
+      Object.entries(fields).forEach(([id,key]) => { sv(id, d[key] || ''); });
+
+      // 野菜・チケット・設定
+      if (d.customVeggies)    customVeggies = d.customVeggies;
+      if (d.selectedVeggies)  selectedVeggies = new Set(d.selectedVeggies);
+      if (d.tickets)          tickets = d.tickets;
+      if (d.mapLocationText)  mapLocationText = d.mapLocationText;
+      if (d.ticketStyle)      { ticketStyle = d.ticketStyle; setTicketStyle(ticketStyle, true); }
+      if (d.mapUrl)           parseMapUrl(d.mapUrl, true);
+
+      // 画像復元
+      const imgMap = { logoImage:'logo', mapImage:'map', qrImage:'qr' };
+      const imgLabels = {
+        logo:'&#128247; ✓ ロゴ画像が復元されました',
+        map: '&#128205; ✓ 地図画像が復元されました',
+        qr:  '&#128248; ✓ QRコード画像が復元されました'
+      };
+      Object.entries(imgMap).forEach(([key, type]) => {
+        if (d[key]) {
+          uploads[type] = d[key];
+          document.getElementById(type+'-label').innerHTML = imgLabels[type];
+          const prev = document.getElementById(type+'-preview');
+          prev.src = d[key]; prev.style.display = 'block';
+        }
+      });
+
+      renderVeggieGrid();
+      renderTickets();
+      save();
+
+      st.textContent = '✓ データを読み込みました！';
+      st.className = 'import-status ok';
+      st.style.display = 'block';
+      setTimeout(() => { st.style.display = 'none'; }, 3000);
+
+    } catch(err) {
+      st.textContent = '読み込みに失敗しました。正しいJSONファイルか確認してください。';
+      st.className = 'import-status ng';
+      st.style.display = 'block';
+    }
+  };
+  r.readAsText(file);
+};
 
 load();
 renderVeggieGrid();
