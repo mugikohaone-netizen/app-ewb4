@@ -154,65 +154,51 @@ textarea{resize:vertical;min-height:54px}
 
 <!-- ③ 地図 -->
 <div class="card">
-  <div class="sec-title">&#9314; 販売場所の地図</div>
-
-  <label class="lbl">地図の扱い方を選んでください</label>
-  <div class="ticket-style-row" style="flex-wrap:wrap;gap:6px;margin-bottom:10px">
-    <button class="style-btn active" id="map-mode-btn-illust" onclick="setMapMode('illust')">
-      &#127912; AI手描き風<br><span style="font-size:.63rem;opacity:.8">場所名からAIが描く</span>
-    </button>
-    <button class="style-btn" id="map-mode-btn-blank" onclick="setMapMode('blank')">
-      &#9633; 空白確保<br><span style="font-size:.63rem;opacity:.8">後で自分で貼り付け</span>
-    </button>
-    <button class="style-btn" id="map-mode-btn-upload" onclick="setMapMode('upload')" style="flex:1 0 100%;">
-      &#128444; 画像をSTEP2で送る<br><span style="font-size:.63rem;opacity:.8">地図スクショをAIに渡す（文字が崩れる場合あり）</span>
-    </button>
-  </div>
-
-  <div class="fl">
-    <!-- 共通：GoogleマップURL（illust・blankで場所名抽出に使用） -->
-    <div id="map-url-block">
-      <label class="lbl">Google マップ URL（任意・場所名の抽出に使用）</label>
-      <input type="url" id="map-url" placeholder="https://maps.google.com/..." oninput="parseMapUrl(this.value)">
-      <div class="map-status" id="map-status"></div>
+  <div class="sec-title">&#9314; 販売場所の地図エリア</div>
+  <label class="ie-img-toggle" style="margin-bottom:6px">
+    <input type="checkbox" id="use-map" onchange="save()">
+    地図の空白エリアをチラシに確保する
+  </label>
+  <div id="map-size-block">
+    <label class="lbl">空白エリアのサイズ</label>
+    <div class="fl2">
+      <div>
+        <label class="lbl">幅（mm）</label>
+        <input type="number" id="map-w" value="90" min="30" max="180" inputmode="numeric" onchange="save()">
+      </div>
+      <div>
+        <label class="lbl">高さ（mm）</label>
+        <input type="number" id="map-h" value="70" min="30" max="180" inputmode="numeric" onchange="save()">
+      </div>
     </div>
-    <div id="map-info" style="display:none">
-      <label class="lbl">抽出した場所情報（修正可）</label>
-      <input type="text" id="map-label" placeholder="場所名・住所">
-    </div>
-
-    <!-- upload モードのみ：チェックのみ表示（実際の画像はSTEP2でAIチャットに直接貼る） -->
-    <div id="map-upload-block" style="display:none">
-      <label class="ie-img-toggle">
-        <input type="checkbox" id="map-has-image" onchange="save()">
-        地図のスクリーンショットを用意してある（STEP2でAIチャットに直接貼ります）
-      </label>
-    </div>
-
-    <!-- blank モードのみ：サイズ選択 -->
-    <div id="map-blank-block" style="display:none">
-      <label class="lbl">空白エリアのサイズ</label>
-      <select id="map-blank-size" onchange="save()">
-        <option value="small">小（約50mm×50mm）</option>
-        <option value="medium" selected>中（約70mm×70mm）</option>
-        <option value="large">大（約90mm×70mm）</option>
-      </select>
-      <p style="font-size:.68rem;opacity:.55;margin-top:4px;line-height:1.5">出力されたチラシ画像をCanvaや写真アプリで開き、地図スクショを重ねて貼り付けてください。</p>
-    </div>
+    <p style="font-size:.68rem;opacity:.55;margin-top:5px;line-height:1.5">背景と同じ色のスペースが確保されます。Canvaなどで地図画像を上から重ねるだけでOKです。サイズは目安なので大体で大丈夫です。</p>
   </div>
 </div>
 
 <!-- ④ QRコード -->
 <div class="card">
-  <div class="sec-title">&#9315; QRコード <span style="font-size:.7rem;opacity:.55;font-family:var(--fm);font-weight:400">（任意）</span></div>
-  <label class="ie-img-toggle" style="margin-bottom:4px">
+  <div class="sec-title">&#9315; QRコードエリア <span style="font-size:.7rem;opacity:.55;font-family:var(--fm);font-weight:400">（任意）</span></div>
+  <label class="ie-img-toggle" style="margin-bottom:6px">
     <input type="checkbox" id="use-qr" onchange="save()">
-    QRコードをチラシに入れる
+    QRコードの空白エリアをチラシに確保する
   </label>
-  <p style="font-size:.68rem;opacity:.55;line-height:1.5">チェックを入れると「STEP 4」にQR画像をAIのチャットへ直接貼る指示が出ます。</p>
-  <div style="margin-top:8px">
-    <label class="lbl">QRコードの説明テキスト（任意）</label>
-    <input type="text" id="qr-text" placeholder="例：インスタはこちら、LINE登録はこちら">
+  <div id="qr-size-block">
+    <label class="lbl">空白エリアのサイズ</label>
+    <div class="fl2">
+      <div>
+        <label class="lbl">幅（mm）</label>
+        <input type="number" id="qr-w" value="45" min="20" max="100" inputmode="numeric" onchange="save()">
+      </div>
+      <div>
+        <label class="lbl">高さ（mm）</label>
+        <input type="number" id="qr-h" value="45" min="20" max="100" inputmode="numeric" onchange="save()">
+      </div>
+    </div>
+    <div style="margin-top:7px">
+      <label class="lbl">QRコードの説明テキスト（任意）</label>
+      <input type="text" id="qr-text" placeholder="例：インスタはこちら、LINE登録はこちら">
+    </div>
+    <p style="font-size:.68rem;opacity:.55;margin-top:5px;line-height:1.5">背景と同じ色のスペースが確保されます。CanvaなどでQR画像を上から重ねるだけでOKです。サイズは目安なので大体で大丈夫です。</p>
   </div>
 </div>
 
@@ -308,37 +294,15 @@ textarea{resize:vertical;min-height:54px}
     <textarea class="prompt-ta" id="prompt-flyer" rows="13" readonly></textarea>
   </div>
 
-  <!-- STEP2 地図 -->
+  <!-- STEP2 ロゴ -->
   <div class="card" id="step2-card" style="display:none">
-    <span class="prompt-step">STEP 2 — 地図画像を添付して送る</span>
-    <div class="prompt-header">
-      <div class="prompt-title">&#128205; 地図画像の配置指示</div>
-      <button class="btn-sm btn-copy" id="copy-map" onclick="copyText('prompt-map','copy-map')">コピー</button>
-    </div>
-    <div class="prompt-desc">地図のスクリーンショット画像を添付しながらこのプロンプトを送ってください。</div>
-    <textarea class="prompt-ta" id="prompt-map" rows="4" readonly></textarea>
-  </div>
-
-  <!-- STEP3 ロゴ -->
-  <div class="card" id="step3-card" style="display:none">
-    <span class="prompt-step">STEP 3 — ロゴ画像を添付して送る</span>
+    <span class="prompt-step">STEP 2 — ロゴ画像を添付して送る</span>
     <div class="prompt-header">
       <div class="prompt-title">&#127981; ロゴの配置指示</div>
       <button class="btn-sm btn-copy" id="copy-logo" onclick="copyText('prompt-logo','copy-logo')">コピー</button>
     </div>
-    <div class="prompt-desc">ロゴ画像だけを添付しながらこのプロンプトを送ってください。QRコードはまだ送りません。</div>
+    <div class="prompt-desc">ロゴ画像を添付しながらこのプロンプトを送ってください。</div>
     <textarea class="prompt-ta" id="prompt-logo" rows="4" readonly></textarea>
-  </div>
-
-  <!-- STEP4 QR -->
-  <div class="card" id="step4-card" style="display:none">
-    <span class="prompt-step">STEP 4 — QRコード画像を添付して送る</span>
-    <div class="prompt-header">
-      <div class="prompt-title">&#128248; QRコードの配置指示</div>
-      <button class="btn-sm btn-copy" id="copy-qr" onclick="copyText('prompt-qr','copy-qr')">コピー</button>
-    </div>
-    <div class="prompt-desc">QRコード画像だけを添付しながらこのプロンプトを送ってください。</div>
-    <textarea class="prompt-ta" id="prompt-qr" rows="5" readonly></textarea>
   </div>
 
   <!-- 野菜イラスト -->
@@ -351,7 +315,7 @@ textarea{resize:vertical;min-height:54px}
     <textarea class="prompt-ta" id="prompt-veggie" rows="7" readonly></textarea>
   </div>
 
-  <p class="note">STEP順に送るとAIが混乱せず綺麗に仕上がります。</p>
+  <p class="note">地図・QRは空白エリアに後からCanvaなどで貼り付けてください。</p>
 </div>
 
 </main>
@@ -359,7 +323,6 @@ textarea{resize:vertical;min-height:54px}
 <script>
 const SK = 'veggie-flyer-v2';
 let mapLocationText = '';
-let mapMode = 'illust';
 let selectedVeggies = new Set();
 let tickets = [];
 let customVeggies = [];
@@ -377,11 +340,13 @@ const save = () => {
   try {
     localStorage.setItem(SK, JSON.stringify({
       saleEntries,
-      mapUrl:v('map-url'), mapLabel:v('map-label'), catchMain:v('catch-main'),
-      catchSub:v('catch-sub'), ticketExpire:v('ticket-expire'), qrText:v('qr-text'),
+      catchMain:v('catch-main'), catchSub:v('catch-sub'),
+      ticketExpire:v('ticket-expire'), qrText:v('qr-text'),
       selectedVeggies:[...selectedVeggies], customVeggies, tickets,
-      mapLocationText, ticketStyle, mapMode, mapBlankSize:v('map-blank-size'),
-      useLogo: cb('use-logo'), useQR: cb('use-qr'), mapHasImage: cb('map-has-image')
+      ticketStyle,
+      useMap:cb('use-map'), mapW:v('map-w'), mapH:v('map-h'),
+      useQR:cb('use-qr'), qrW:v('qr-w'), qrH:v('qr-h'),
+      useLogo:cb('use-logo'), useQRcheck:cb('use-qr')
     }));
   } catch(e) {}
 };
@@ -390,26 +355,22 @@ const load = () => {
     const d = JSON.parse(localStorage.getItem(SK) || 'null');
     if (!d) return;
     const fields = {
-      'map-url':'mapUrl','map-label':'mapLabel','catch-main':'catchMain',
-      'catch-sub':'catchSub','ticket-expire':'ticketExpire','qr-text':'qrText'
+      'catch-main':'catchMain','catch-sub':'catchSub',
+      'ticket-expire':'ticketExpire','qr-text':'qrText',
+      'map-w':'mapW','map-h':'mapH','qr-w':'qrW','qr-h':'qrH'
     };
     Object.entries(fields).forEach(([id,key]) => { if(d[key]) sv(id, d[key]); });
-    if (d.mapUrl) { parseMapUrl(d.mapUrl, true); }
     if (d.customVeggies)   customVeggies = d.customVeggies;
     if (d.selectedVeggies) selectedVeggies = new Set(d.selectedVeggies);
     if (d.tickets)         tickets = d.tickets;
-    if (d.mapLocationText) mapLocationText = d.mapLocationText;
     if (d.ticketStyle)     { ticketStyle = d.ticketStyle; setTicketStyle(ticketStyle, true); }
-    if (d.mapMode)         { mapMode = d.mapMode; setMapMode(mapMode, true); }
-    if (d.mapBlankSize)    sv('map-blank-size', d.mapBlankSize);
-    if (d.useLogo)         setCb('use-logo', d.useLogo);
-    if (d.useQR)           setCb('use-qr', d.useQR);
-    if (d.mapHasImage)     setCb('map-has-image', d.mapHasImage);
-    // 旧データ互換（saleDate/saleTime/salePlaceの単体フィールド）
+    if (d.useLogo !== undefined) setCb('use-logo', d.useLogo);
+    if (d.useMap  !== undefined) setCb('use-map',  d.useMap);
+    if (d.useQR   !== undefined) setCb('use-qr',   d.useQR);
     if (d.saleEntries) {
       saleEntries = d.saleEntries;
     } else if (d.saleDate || d.saleTime || d.salePlace) {
-      saleEntries = [{ date: d.saleDate||'', time: d.saleTime||'', place: d.salePlace||'' }];
+      saleEntries = [{ date:d.saleDate||'', time:d.saleTime||'', place:d.salePlace||'' }];
     }
   } catch(e) {}
 };
@@ -461,30 +422,6 @@ const removeSaleEntry = (i) => {
 };
 
 // ── Google マップ URL パース ──
-const parseMapUrl = (url, silent) => {
-  const st = document.getElementById('map-status');
-  const mi = document.getElementById('map-info');
-  if (!url || url.length < 10) { st.style.display='none'; mi.style.display='none'; mapLocationText=''; return; }
-  let found = '';
-  const pm = url.match(/maps\/place\/([^/@?]+)/);
-  if (pm) found = decodeURIComponent(pm[1].replace(/\+/g,' '));
-  if (!found) { const qm = url.match(/[?&]q=([^&]+)/); if(qm) found = decodeURIComponent(qm[1].replace(/\+/g,' ')); }
-  if (!found) { const sm = url.match(/!1s([^!]+)/); if(sm) try{found=decodeURIComponent(sm[1]);}catch(e){} }
-  if (found && found.length > 2) {
-    mapLocationText = found;
-    if (!silent) sv('map-label', found);
-    st.textContent = '✓ 場所を取得しました：' + found;
-    st.className = 'map-status ok'; st.style.display = 'block';
-    mi.style.display = 'block';
-  } else {
-    mapLocationText = '';
-    st.textContent = '場所名を自動取得できませんでした。「販売場所（名称）」欄に手入力してください。';
-    st.className = 'map-status ng'; st.style.display = 'block';
-    mi.style.display = 'none';
-  }
-  save();
-};
-
 // ── 野菜タグ ──
 const renderVeggieGrid = () => {
   document.getElementById('veggie-grid').innerHTML = [...PRESETS,...customVeggies].map(name =>
@@ -497,18 +434,6 @@ const addCustomVeggie = () => {
   const n = inp.value.trim(); if(!n) return;
   if(![...PRESETS,...customVeggies].includes(n)){ customVeggies.push(n); selectedVeggies.add(n); }
   inp.value=''; renderVeggieGrid(); save();
-};
-
-// ── 地図モード ──
-const setMapMode = (mode, silent) => {
-  mapMode = mode;
-  ['illust','blank','upload'].forEach(m => {
-    const el = document.getElementById('map-mode-btn-'+m);
-    if (el) el.classList.toggle('active', mode===m);
-  });
-  document.getElementById('map-upload-block').style.display = mode==='upload' ? 'block' : 'none';
-  document.getElementById('map-blank-block').style.display  = mode==='blank'  ? 'block' : 'none';
-  if (!silent) save();
 };
 
 // ── チケットスタイル ──
@@ -536,14 +461,13 @@ const addTicket = () => { tickets.push(''); renderTickets(); save(); };
 
 // ── プロンプト生成 ──
 const generatePrompts = () => {
-  const mapLabel   = v('map-label') || mapLocationText;
   const catchMain  = v('catch-main');
   const catchSub   = v('catch-sub');
   const ticketExp  = v('ticket-expire');
   const qrText     = v('qr-text');
   const veggies    = [...selectedVeggies];
   const hasLogo    = cb('use-logo');
-  const hasMap     = mapMode === 'upload' && cb('map-has-image');
+  const hasMap     = cb('use-map');
   const hasQR      = cb('use-qr');
   const hasTickets = tickets.filter(t=>t.trim()).length > 0;
   const ticketList = tickets.filter(t=>t.trim());
@@ -587,30 +511,19 @@ const generatePrompts = () => {
     ? `\n【複数の販売場所について】\n販売場所が${validEntries.length}か所あります。それぞれの販売情報を左側の曜日バッジ＋右側に時間・場所を記載したカード形式で縦に並べてください。${badgeInst}`
     : badgeInst;
 
-  const blankSize = v('map-blank-size') || 'medium';
-  const blankSizeText = { small:'約50mm×50mm', medium:'約70mm×70mm', large:'約90mm×70mm' }[blankSize] || '約70mm×70mm';
+  const mapW = v('map-w') || '90';
+  const mapH = v('map-h') || '70';
+  const qrW  = v('qr-w') || '45';
+  const qrH  = v('qr-h') || '45';
 
-  // 地図指示（mapModeで分岐）
-  let mapInst = '';
-  if (mapMode === 'illust') {
-    mapInst = mapLabel
-      ? `販売場所のエリアとして「${mapLabel}」周辺の簡略な手描き風の地図イラストを描いてください。`
-      : '';
-  } else if (mapMode === 'blank') {
-    mapInst = `地図を後で貼り付けるための白い空白エリア（${blankSizeText}）をチラシ右側中段に確保してください。そのエリアには何も描かないでください。薄いグレーの細い点線で枠を示してください。`;
-  } else if (mapMode === 'upload') {
-    mapInst = hasMap
-      ? '地図エリアを右側中段に確保してください（STEP2でスクリーンショットを添付します）。'
-      : mapLabel
-        ? `販売場所のエリアとして「${mapLabel}」周辺の簡略な手描き風の地図イラストを描いてください。`
-        : '';
-  }
+  // 地図空白指示
+  const mapInst = hasMap
+    ? `地図を後から貼り付けるためのスペースとして、チラシ右側中段におおよそ幅${mapW}mm × 高さ${mapH}mm程度の余白を確保してください。その部分はチラシの背景色と同じ色で塗りつぶし、枠線・アイコン・文字・イラストは一切描かないでください。サイズは厳密でなくて構いません。`
+    : '';
 
-  // QR指示（STEP1本体に入れる：画像なし版）
+  const qrPos = ticketStyle === 'triangle' ? 'チラシ左下' : 'チラシ右下';
   const qrInst = hasQR
-    ? ticketStyle === 'triangle'
-      ? `QRコードエリアをチラシ左下に約40mm×40mmで確保してください。右下の三角チケット・右側の地図エリアと完全に干渉しない左下隅に配置してください。${qrText ? 'QRコードの下に「'+qrText+'」と小さく記載してください。' : ''}`
-      : `QRコードエリアをチラシ右下に約40mm×40mmで確保してください。${qrText ? 'その下に「'+qrText+'」と小さく記載してください。' : ''}`
+    ? `QRコードを後から貼り付けるためのスペースとして、${qrPos}におおよそ幅${qrW}mm × 高さ${qrH}mm程度の余白を確保してください。その部分はチラシの背景色と同じ色で塗りつぶし、枠線・アイコン・文字・イラストは一切描かないでください。サイズは厳密でなくて構いません。${qrText ? ' スペースの下に「'+qrText+'」と小さく記載してください。' : ''}`
     : '';
 
   // チケット指示
@@ -662,18 +575,9 @@ ${veggies.length ? `チラシ内に以下の野菜の手描きイラストを配
     ? `【重要】チラシ全体を再生成したり描き直したりしないでください。先ほど作ったチラシ画像に、今添付した地図のスクリーンショット画像を「そのまま・加工なし」で右側中段の地図エリアに合成してください。地図の内容・色・文字は一切変えないでください。「販売場所の地図」という短いラベルを地図の上か下に小さく追加するだけにしてください。それ以外のチラシの要素（イラスト・文字・背景・レイアウト）は一切変更しないでください。`
     : '';
 
-  // ── STEP3：ロゴのみ ──
+  // ── STEP2：ロゴのみ ──
   const logoPrompt = hasLogo
     ? `先ほど作ったチラシに、今添付したロゴ画像を組み込んでください。チラシ全体を再生成しないでください。\n\nロゴ画像をチラシ左上角（端から約10mm内側）に約55mm×55mmで配置してください。ロゴの文字・色・デザインは一切変えず、画像をそのまま貼り付けてください。\n\nロゴ以外のチラシの要素は一切変更しないでください。確認や質問は不要でそのまま実行してください。`
-    : '';
-
-  // ── STEP4：QRコードのみ ──
-  const qrPosition = ticketStyle === 'triangle'
-    ? 'チラシ左下（右下コーナーの三角チケット・右側の地図エリアと干渉しない左下隅）。三角チケットの斜め辺から完全に離れた場所'
-    : 'チラシ右下のQRエリア';
-
-  const qrPrompt = hasQR
-    ? `先ほど作ったチラシに、今添付したQRコード画像を組み込んでください。チラシ全体を再生成しないでください。\n\n【QRコード配置・最重要ルール】\n① QRコードを再描画・模写・イラスト化しないでください。添付した画像をそのままコピー＆ペーストで配置してください。\n② QRコードのピクセルを1つも変えないでください。変わると読み取り不能になります。\n③ QRコードの周囲に必ず白い余白（最低5mm以上）を確保してください。余白がないとスキャンできません。白い余白ごと配置してください。\n④ サイズ変更は縦横比を保った等倍縮小のみ許可します。\n\nQRコードを「${qrPosition}」に、上記ルールを守って配置してください。${qrText ? '\nQRコードの下に「'+qrText+'」と小さく記載してください。' : ''}\n\nQRコード以外のチラシの要素は一切変更しないでください。確認や質問は不要でそのまま実行してください。`
     : '';
 
   // ── 野菜イラスト ──
@@ -683,14 +587,10 @@ ${veggies.length ? `チラシ内に以下の野菜の手描きイラストを配
 
   // 出力
   sv('prompt-flyer', flyerPrompt);
-  sv('prompt-map', mapPrompt);
   sv('prompt-logo', logoPrompt);
-  sv('prompt-qr', qrPrompt);
   sv('prompt-veggie', veggiePrompt);
 
-  document.getElementById('step2-card').style.display = (mapMode==='upload' && hasMap) ? 'block' : 'none';
-  document.getElementById('step3-card').style.display = hasLogo ? 'block' : 'none';
-  document.getElementById('step4-card').style.display = hasQR   ? 'block' : 'none';
+  document.getElementById('step2-card').style.display = hasLogo ? 'block' : 'none';
 
   const pb = document.getElementById('prompt-block');
   pb.style.display = 'flex';
@@ -715,11 +615,9 @@ document.querySelectorAll('input[type=text],input[type=url],textarea').forEach(e
 // ── エクスポート ──
 const exportData = () => {
   const data = {
-    _version: 4,
+    _version: 5,
     _exportedAt: new Date().toISOString(),
     saleEntries,
-    mapUrl:      v('map-url'),
-    mapLabel:    v('map-label'),
     catchMain:   v('catch-main'),
     catchSub:    v('catch-sub'),
     ticketExpire:v('ticket-expire'),
@@ -727,13 +625,12 @@ const exportData = () => {
     selectedVeggies: [...selectedVeggies],
     customVeggies,
     tickets,
-    mapLocationText,
     ticketStyle,
-    mapMode,
-    mapBlankSize: v('map-blank-size'),
-    useLogo:     cb('use-logo'),
-    useQR:       cb('use-qr'),
-    mapHasImage: cb('map-has-image'),
+    useLogo: cb('use-logo'),
+    useMap:  cb('use-map'),
+    useQR:   cb('use-qr'),
+    mapW: v('map-w'), mapH: v('map-h'),
+    qrW:  v('qr-w'), qrH:  v('qr-h'),
   };
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
@@ -761,12 +658,13 @@ const importData = (e) => {
 
       // テキストフィールド復元
       const fields = {
-        'map-url':'mapUrl','map-label':'mapLabel','catch-main':'catchMain',
-        'catch-sub':'catchSub','ticket-expire':'ticketExpire','qr-text':'qrText'
+        'catch-main':'catchMain','catch-sub':'catchSub',
+        'ticket-expire':'ticketExpire','qr-text':'qrText',
+        'map-w':'mapW','map-h':'mapH','qr-w':'qrW','qr-h':'qrH'
       };
       Object.entries(fields).forEach(([id,key]) => { sv(id, d[key] || ''); });
 
-      // 販売情報復元（v2旧データ互換）
+      // 販売情報復元
       if (d.saleEntries) {
         saleEntries = d.saleEntries;
       } else if (d.saleDate || d.saleTime || d.salePlace) {
@@ -777,17 +675,13 @@ const importData = (e) => {
       renderSaleEntries();
 
       // 野菜・チケット・設定
-      if (d.customVeggies)    customVeggies = d.customVeggies;
-      if (d.selectedVeggies)  selectedVeggies = new Set(d.selectedVeggies);
-      if (d.tickets)          tickets = d.tickets;
-      if (d.mapLocationText)  mapLocationText = d.mapLocationText;
-      if (d.ticketStyle)      { ticketStyle = d.ticketStyle; setTicketStyle(ticketStyle, true); }
-      if (d.mapMode)          { mapMode = d.mapMode; setMapMode(mapMode, true); }
-      if (d.mapBlankSize)     sv('map-blank-size', d.mapBlankSize);
-      if (d.useLogo !== undefined)     setCb('use-logo', d.useLogo);
-      if (d.useQR !== undefined)       setCb('use-qr', d.useQR);
-      if (d.mapHasImage !== undefined) setCb('map-has-image', d.mapHasImage);
-      if (d.mapUrl)           parseMapUrl(d.mapUrl, true);
+      if (d.customVeggies)   customVeggies = d.customVeggies;
+      if (d.selectedVeggies) selectedVeggies = new Set(d.selectedVeggies);
+      if (d.tickets)         tickets = d.tickets;
+      if (d.ticketStyle)     { ticketStyle = d.ticketStyle; setTicketStyle(ticketStyle, true); }
+      if (d.useLogo !== undefined) setCb('use-logo', d.useLogo);
+      if (d.useMap  !== undefined) setCb('use-map',  d.useMap);
+      if (d.useQR   !== undefined) setCb('use-qr',   d.useQR);
 
       renderVeggieGrid();
       renderTickets();
